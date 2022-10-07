@@ -1,0 +1,41 @@
+<launch>
+  <!-- Configurable arguments -->
+  <arg name="modem_id" default="2"/>
+  <arg name="radius" default="5"/>
+  <arg name="distance_between_meas" default="1"/>
+  <arg name="num_points" default="-1"/>
+  <arg name="target_estimation_method" default="PF"/>
+  <arg name="path_method" default="circumference"/>
+  <arg name="pretrined_agent" default="t8c"/>
+  <arg name="debug" default="False"/>
+  <arg name="sim" default="True"/>
+  <arg name="interface" default="ethernet"/>
+  <arg name="final_depth" default="0"/>
+  <arg name="final_altitude" default="10"/>
+  <arg name="reference" default="0"/>
+  <arg name="heave_mode" default="0"/>
+  <arg name="surge_velocity" default="1"/>
+  <arg name="tolerance_xy" default="3"/>
+  <arg name="timeout" default="1800"/>
+  <arg name="no_altitude_goes_up" default="True"/>
+  <arg name="record" default="True"/>
+  <arg name="target_x" default="0"/>
+  <arg name="target_y" default="0"/>
+  <arg name="target_z" default="0"/>
+  <arg name="target_v" default="0"/>
+  <arg name="target_yaw" default="90"/>
+  
+  <!-- Load services and programs -->
+  <node name="go_to_watch_service" pkg="stalker" type="go_to_watch_service.py" args='$(arg final_depth) $(arg final_altitude) $(arg reference) $(arg heave_mode) $(arg surge_velocity) $(arg tolerance_xy) $(arg timeout) $(arg no_altitude_goes_up)' output="screen">
+  </node>
+  <node name="sim_modem_pos_service" pkg="stalker" type="sim_modem_pos_service.py" args='$(arg debug)' output="screen">
+  </node>
+  <node name="measure_range_service" pkg="stalker" type="measure_range_service.py" args='$(arg debug) $(arg sim) $(arg interface)' output="screen">
+  </node>
+  <node name="sim_modem_pos_client" pkg="stalker" type="sim_modem_pos_client.py" args='$(arg target_x) $(arg target_y) $(arg target_z) $(arg target_v) $(arg target_yaw)' output="screen" launch-prefix="bash -c 'sleep 10; $0 $@' ">
+  </node>
+  <node name="stalker_main" pkg="stalker" type="stalker_main.py" args='$(arg modem_id) $(arg radius) $(arg distance_between_meas) $(arg num_points) $(arg target_estimation_method) $(arg path_method) $(arg pretrined_agent)' output="screen" launch-prefix="bash -c 'sleep 12; $0 $@' ">
+  </node>
+  <node pkg="rosbag" type="record" name="rosbag_record_stalker" args="record -o $(env HOME)/bags/stalker -a -x '/sparus2/flir_spinnaker_camera/(.*)'" if="$(arg record)">
+  </node>
+</launch>
