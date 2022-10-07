@@ -3,9 +3,10 @@
 import rospy
 import numpy as np
 import sys 
-from stalker.srv import MeasureRange
+from Khezu.srv import MeasureRange
 from utils import netcat
 from cola2_msgs.msg import NavSts
+from Khezu.msg import Range
 import utm
 
 
@@ -21,9 +22,12 @@ class SlantRange:
         # Creates a node with name 'measure_range' and make sure it is a
         # unique node (using anonymous=True).
         rospy.init_node('slant_range', anonymous=True)
-        
+        self.name = rospy.get_name()
+        namespace = rospy.get_namespace()
+        self.pub_range = rospy.Publisher(namespace + "range",
+										Range, queue_size=1)
         # A service
-        self.srv = rospy.Service('stalker/measure_range', MeasureRange,
+        self.srv = rospy.Service('khezu/measure_range', MeasureRange,
         					self.measure_range_callback)
         
         # A subscriber to the topic '/sparus2/navigator/navigation'. self.update_pose is called
@@ -47,8 +51,9 @@ class SlantRange:
     	#slant_range =  100. #this is fake, used only for debuging purposes
     	if self.sim_modem_mov == True:
     		self.modem.move(self.auv_x,self.auv_y,self.auv_z)
-    	slant_range = self.modem.slant_range(request.modem_id)
-    	return slant_range
+        slant_range = self.modem.slant_range(request.modem_id)
+        self.pub_range.publish(slant_range)
+        return slant_range
     
     def update_pose(self, data):
         """Callback function which is called when a new message of type NavSts is
