@@ -3,10 +3,10 @@
 import rospy
 import numpy as np
 import sys 
-from Khezu.srv import MeasureRange
+from khezu.srv import MeasureRange
 from utils import netcat
 from cola2_msgs.msg import NavSts
-from Khezu.msg import Range
+from khezu.msg import Range
 import utm
 
 
@@ -24,7 +24,7 @@ class SlantRange:
         rospy.init_node('slant_range', anonymous=True)
         self.name = rospy.get_name()
         namespace = rospy.get_namespace()
-        self.pub_range = rospy.Publisher(namespace + "range",
+        self.pub_range_info = rospy.Publisher(namespace + "range_info",
 										Range, queue_size=1)
         # A service
         self.srv = rospy.Service('khezu/measure_range', MeasureRange,
@@ -49,21 +49,29 @@ class SlantRange:
     def measure_range_callback(self, request):
     	#send a message to the remote acoustic modem to compute the time of flight and obtain the slant range
     	#slant_range =  100. #this is fake, used only for debuging purposes
-    	if self.sim_modem_mov == True:
-    		self.modem.move(self.auv_x,self.auv_y,self.auv_z)
+        if self.sim_modem_mov == True:
+            self.modem.move(self.auv_x,self.auv_y,self.auv_z)
         slant_range = self.modem.slant_range(request.modem_id)
-        self.pub_range.publish(slant_range)
+
+        rangeinfo = Range()
+        rangeinfo.id = request.modem_id
+        rangeinfo.range = slant_range
+        rangeinfo.position.depth = self.auv_z
+        rangeinfo.global_position.latitude = self.lat_global
+        rangeinfo.global_position.longitude = self.lon_global
+        rangeinfo.header.stamp = rospy.Time().now()
+        self.pub_range_info.publish(rangeinfo)
         return slant_range
     
     def update_pose(self, data):
         """Callback function which is called when a new message of type NavSts is
         received by the subscriber."""
         self.pose = data
-        lat = self.pose.global_position.latitude
-        lon = self.pose.global_position.longitude
+        self.lat_global = self.pose.global_position.latitude
+        self.lon_global = self.pose.global_position.longitude
         self.auv_z = self.pose.position.depth
         #AUV current position in UTM format
-        tuple = utm.from_latlon(lat, lon)
+        tuple = utm.from_latlon(self.lat_global, self.lon_global)
         easting, northing, zonenumber, zoneletter = tuple
         #origin
         lat = self.pose.origin.latitude
@@ -79,34 +87,34 @@ class SlantRange:
    
 if __name__ == '__main__':
     try:
-    	try:
-    		debug = (sys.argv[1])
-    		sim = (sys.argv[2])
-    		interface = (sys.argv[3])
-    		if debug == 'True':
-    			debug = True
-    		elif debug == 'False':
-    			debug = False
-    		else:
-    			print('<debug> must be True or False')
-    			sys.exit()
-    		if sim == 'True':
-    			sim = True
-    		elif sim == 'False':
-    			sim = False
-    		else:
-    			print('<sim> must be True or False')
-    			sys.exit()
-    		if interface != 'serial' and interface != 'ethernet':
-    			print('<interface> must be serial or ethernet')
-    			sys.exit()
-    	except IndexError:
-    		debug = False
-    		sim = False
-    		interface = 'serial'
-    		print('Arguments can be passed for debuging and simulating purposes, if not, default will be used')
+        try:
+            debug = (sys.argv[1])
+            sim = (sys.argv[2])
+            interface = (sys.argv[3])
+            if debug == 'True':
+                debug = True
+            elif debug == 'False':
+                debug = False
+            else:
+                print('<debug> must be True or False')
+                sys.exit()
+            if sim == 'True':
+                sim = True
+            elif sim == 'False':
+                sim = False
+            else:
+                print('<sim> must be True or False')
+                sys.exit()
+            if interface != 'serial' and interface != 'ethernet':
+                print('<interface> must be serial or ethernet')
+                sys.exit()
+        except IndexError:
+            debug = False
+            sim = False
+            interface = 'serial'
+            print('Arguments can be passed for debuging and simulating purposes, if not, default will be used')
     	
-    	done = SlantRange(debug=debug,sim=sim,interface=interface)
-    	rospy.spin()
+        done = SlantRange(debug=debug,sim=sim,interface=interface)
+        rospy.spin()
     except rospy.ROSInterruptException:
     	pass
