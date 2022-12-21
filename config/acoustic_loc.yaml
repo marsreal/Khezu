@@ -1,0 +1,40 @@
+# false: optimize the pose of the landmarks (assume camera extrinsics are correct)
+# true: additionally, calibrate the extrinsics of the camera
+calibrate_extrinsics_camera: false
+
+
+# Camera extrinsics in [x y z roll pitch yaw]: [meters and degrees]
+# if calibrate == false:
+#     ground_truth is used as extrinsics
+#     initial_guess is not used at all
+# if calibrate == true:
+#     ground_truth is used only for comparison
+#     initial_guess is used as an initial values for the optimizer
+
+n_cameras: 2
+transform_ins_camera:
+  constrain_z_cam: true
+  camera0:
+    ground_truth: [0.5, -0.12, 0.5, 0.0, 0.0, 90.0]
+    initial_guess: [0.0, 0.0, 0.5, 0.0, 0.0, 0.0]
+  camera1:
+    ground_truth: [0.5, 0.12, 0.5, 0.0, 0.0, 90.0]
+    initial_guess: [0.0, 0.0, 0.5, 0.0, 0.0, 0.0]
+  
+
+# true: print the whole graph every time it changes
+# false: silent
+debug: true
+
+use_isam: false  # TODO: ISAM not working (Indeterminant linear system detected while working near variable)
+
+ros:
+  topics:
+    subscribers:
+      odometry: "/sparus2/navigator/odometry"   # nav_msgs::Odometry
+      fiducial_transform: "/fiducial_transforms"  # fiducial_msgs::FiducialTransformArray
+      fiducial_transform_marker: "/marker_array"  # visualization_msgs::MarkerArray
+      range_info: "/sparus2/usbl/beacon_info"
+    publishers:
+      robot_optimized_path: "/robot_optimized_path" # nav_msgs::Path
+      landmarks: "/landmarks"  # visualization_msgs::Marker

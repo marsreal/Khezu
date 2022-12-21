@@ -3,10 +3,10 @@
 import rospy
 import numpy as np
 import sys 
-from stalker.srv import MeasureRange
+from khezu.srv import MeasureRange
 from utils import netcat
 from cola2_msgs.msg import NavSts
-from stalker.msg import Range
+from khezu.msg import Range
 import utm
 from threading import Thread
 from threading import Semaphore
@@ -32,10 +32,10 @@ class SlantRange:
         self.get_config()
 
 
-        self.pub_range_info = rospy.Publisher(namespace + "range_info",
+        self.pub_range_info = rospy.Publisher("khezu/range_info",
 										Range, queue_size=1)
         # A service
-        self.srv = rospy.Service('stalker/measure_range', MeasureRange,
+        self.srv = rospy.Service('khezu/measure_range', MeasureRange,
         					self.measure_range_callback)
         
         # A subscriber to the topic '/sparus2/navigator/navigation'. self.update_pose is called
@@ -54,25 +54,30 @@ class SlantRange:
         self.pose = NavSts()
         self.flag = 0
         self.smph = Semaphore(1)
+        self.range_modem = 0
         rospy.Timer(rospy.Duration(5), self.range_info_callback)
 
         
     def range_info_callback(self,event):
         #modem_id = [1,2]
+        self.smph.acquire()
         for i in self.mod_id:
-            self.smph.acquire()
+            
             try:
                 slant_range = self.modem.slant_range(i)
             except: 
                 slant_range = -1
                 print('WARNING: PORT READ ERROR, RECURSIVE ACCESS')
-            self.smph.release()
+            
             rangeinfo = Range()
             rangeinfo.id = i
             rangeinfo.range = slant_range
             rangeinfo.header.frame_id = "sparus2/modem"
             rangeinfo.header.stamp = rospy.Time().now()
             self.pub_range_info.publish(rangeinfo)
+            if i==1:
+                self.range_modem = slant_range
+        self.smph.release()
 
 
     def measure_range_callback(self, request):
@@ -83,6 +88,7 @@ class SlantRange:
         if self.sim_modem_mov == True:
             self.modem.move(self.auv_x,self.auv_y,self.auv_z)
         slant_range = self.modem.slant_range(request.modem_id)
+        #slant_range = self.range_modem
         self.smph.release()
         
         return slant_range

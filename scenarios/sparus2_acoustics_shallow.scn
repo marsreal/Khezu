@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<scenario>
+	<environment>
+		<ned latitude="41.7777" longitude="3.0333"/>
+		<ocean>
+			<waves height="0.0"/>
+			<current type="uniform">
+				<velocity xyz="$(param uniform_current_velocity)"/>
+				<ros_subscriber velocity="/currents/uniform/velocity"/>
+			</current>
+		</ocean>
+		<atmosphere>
+			<sun azimuth="20.0" elevation="50.0"/>
+		</atmosphere>
+	</environment>
+
+	<materials>
+		<material name="Neutral" density="1000.0" restitution="0.5"/>
+		<material name="Rock" density="3000.0" restitution="0.8"/>
+		<material name="Fiberglass" density="1500.0" restitution="0.3"/>
+		<material name="Aluminium" density="2710.0" restitution="0.7"/>
+		<material name="Polyamid" density="1500.0" restitution="0.1"/>
+		<friction_table>
+			<friction material1="Neutral" material2="Neutral" static="0.5" dynamic="0.2"/>
+			<friction material1="Neutral" material2="Rock" static="0.2" dynamic="0.1"/>
+			<friction material1="Neutral" material2="Fiberglass" static="0.5" dynamic="0.2"/>
+			<friction material1="Neutral" material2="Aluminium" static="0.5" dynamic="0.2"/>
+			<friction material1="Neutral" material2="Polyamid" static="0.2" dynamic="0.05"/>
+			<friction material1="Rock" material2="Rock" static="0.9" dynamic="0.7"/>
+			<friction material1="Rock" material2="Fiberglass" static="0.6" dynamic="0.4"/>
+			<friction material1="Rock" material2="Aluminium" static="0.6" dynamic="0.3"/>
+			<friction material1="Rock" material2="Polyamid" static="0.4" dynamic="0.2"/>
+			<friction material1="Fiberglass" material2="Fiberglass" static="0.5" dynamic="0.2"/>
+			<friction material1="Fiberglass" material2="Aluminium" static="0.5" dynamic="0.2"/>
+			<friction material1="Fiberglass" material2="Polyamid" static="0.1" dynamic="0.05"/>
+			<friction material1="Aluminium" material2="Aluminium" static="0.8" dynamic="0.5"/>
+			<friction material1="Aluminium" material2="Polyamid" static="0.1" dynamic="0.05"/>
+			<friction material1="Polyamid" material2="Polyamid" static="0.1" dynamic="0.05"/>
+		</friction_table>
+	</materials>
+
+	<looks>
+		<look name="white" gray="1.0" roughness="0.2"/>
+		<look name="black" gray="0.05" roughness="0.2"/>
+		<look name="hull" gray="1.0" roughness="0.3" texture="sparus2/hull_tex.png"/>
+		<look name="seabed" rgb="0.7 0.7 0.5" roughness="0.9"/>
+		<look name="grey" gray="0.5" roughness="0.5" metalness="0.8"/>
+	</looks>
+
+	<static name="Bottom" type="plane">
+		<material name="Rock"/>
+		<look name="seabed"/>
+		<world_transform rpy="0.0 0.0 0.0" xyz="0.0 0.0 5.0"/>
+	</static>
+
+	<static name="DockingStationLegs" type="model">
+		<physical>
+			<mesh filename="$(find atlantis_simulation)/data/docking_station/legs_phy.obj" scale="1.0"/>
+			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+		</physical>
+		<visual>
+			<mesh filename="$(find atlantis_simulation)/data/docking_station/legs.obj" scale="1.0"/>
+			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+		</visual>		
+		<material name="Aluminium"/>
+		<look name="gray"/>
+		<world_transform rpy="0.0 0.0 0.0" xyz="$(param docking_station_pos)"/>
+	</static>
+
+	<static name="DockingStationSlides" type="model">
+		<physical>
+			<mesh filename="$(find atlantis_simulation)/data/docking_station/slides_phy.obj" scale="1.0"/>
+			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+		</physical>
+		<visual>
+			<mesh filename="$(find atlantis_simulation)/data/docking_station/slides.obj" scale="1.0"/>
+			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+		</visual>		
+		<material name="Polyamid"/>
+		<look name="gray"/>
+		<world_transform rpy="$(param docking_station_ori)" xyz="$(param docking_station_pos)"/>
+	</static>
+
+	<static name="DockingStationTop" type="model">
+		<physical>
+			<mesh filename="$(find atlantis_simulation)/data/docking_station/top_phy.obj" scale="1.0"/>
+			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+		</physical>
+		<visual>
+			<mesh filename="$(find atlantis_simulation)/data/docking_station/top.obj" scale="1.0"/>
+			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+		</visual>		
+		<material name="Polyamid"/>
+		<look name="gray"/>
+		<world_transform rpy="$(param docking_station_ori)" xyz="$(param docking_station_pos)"/>
+
+		<comm name="Modem" type="acoustic_modem" device_id="1">
+			<connect device_id="3"/>
+			<origin rpy="3.14159 0.0 0.0" xyz="0.0 0.0 -3.0"/>
+			<specs min_vertical_fov="0.0" max_vertical_fov="220.0" range="1000.0"/>
+		</comm>
+
+        <comm name="Modem" type="acoustic_modem" device_id="2">
+			<connect device_id="3"/>
+			<origin rpy="3.14159 0.0 0.0" xyz="5.0 5.0 -3.0"/>
+			<specs min_vertical_fov="0.0" max_vertical_fov="220.0" range="1000.0"/>
+		</comm>
+	</static>
+
+	<include file="$(find iauv_simulation)/scenarios/sparus2.scn">
+		<arg name="robot_name" value="$(param robot_name)"/>
+		<arg name="position" value="0.0 0.0 1.0"/>
+	</include>
+
+	<contact name="HullDSContact">
+		<bodyA name="DockingStationSlides" display="force"/>
+		<bodyB name="$(param robot_name)/Vehicle"/>
+		<history points="1000"/>
+		<ros_publisher topic="/docking_station/contact"/>
+	</contact>
+</scenario>

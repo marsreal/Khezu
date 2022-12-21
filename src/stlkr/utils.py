@@ -667,22 +667,22 @@ class netcat(object):
 
     def send2(self,command):
         if self.python_version == 2:
-        	self.dprint('Sent --> '+ self.name +':' + command)
+            self.dprint('Sent --> '+ self.name +':' + command)
         else:
-        	self.dprint('Sent --> '+ self.name +':' + command.decode('utf-8'))
+            self.dprint('Sent --> '+ self.name +':' + command.decode('utf-8'))
         if self.interface == 'ethernet':
-        	self.netcat = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        	self.netcat.connect((self.ip, self.port))
-        	self.netcat.sendall(command + b'\n')
-        	self.netcat.shutdown(socket.SHUT_WR)
-        	self.netcat.shutdown(socket.SHUT_RD)
-        	self.netcat.close()
+            self.netcat = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.netcat.connect((self.ip, self.port))
+            self.netcat.sendall(command + b'\n')
+            self.netcat.shutdown(socket.SHUT_WR)
+            self.netcat.shutdown(socket.SHUT_RD)
+            self.netcat.close()
         elif self.interface == 'serial':
-        	self.serialPort = serial.Serial(port=self.serial_port_name, baudrate=19200, timeout=5)
-        	self.serialPort.write(command + b'\r')
-        	self.serialPort.close()
+            self.serialPort = serial.Serial(port=self.serial_port_name, baudrate=19200, timeout=5)
+            self.serialPort.write(command + b'\r')
+            self.serialPort.close()
         else:
-        	print('ERROR: Modem interface does not exist')        
+            print('ERROR: Modem interface does not exist')        
         return 
 
     def reset(self):
@@ -736,9 +736,9 @@ class netcat(object):
         self.netcat.connect((self.ip, port2))
         message = str(x)+' '+str(y)+' '+str(z) + '\n'
         if self.python_version == 2:
-        	self.netcat.sendall(message)
+            self.netcat.sendall(message)
         else:
-        	self.netcat.sendall(message.encode('utf-8'))
+            self.netcat.sendall(message.encode('utf-8'))
         self.netcat.shutdown(socket.SHUT_WR)
         self.netcat.close()
         data = ''
@@ -747,9 +747,9 @@ class netcat(object):
             self.netcat.connect((self.ip, port2))
             self.netcat.shutdown(socket.SHUT_WR)
             if self.python_version == 2:
-            	read = self.netcat.recv(1024)
+                read = self.netcat.recv(1024)
             else:
-            	read = self.netcat.recv(1024).decode('utf-8')
+                read = self.netcat.recv(1024).decode('utf-8')
             #self.netcat.shutdown(socket.SHUT_RD)
             self.netcat.close()
             if read == "":
@@ -762,13 +762,13 @@ class netcat(object):
         #self.reset()
         #Send Instant (IM) messages with ack to obtain slant range measuremen
         if self.sim == False: 
-        	message = 'AT*SENDIM,p0,1,'+str(remot_modem_address)+',ack,-'
+            message = 'AT*SENDIM,p0,1,'+str(remot_modem_address)+',ack,-'
         else:
-        	message = 'AT*SENDIM,1,'+str(remot_modem_address)+',ack,-'
+            message = 'AT*SENDIM,1,'+str(remot_modem_address)+',ack,-'
         if self.python_version == 2:
-        	data, ack, failed_num = self.send_ack(message,5)
+            data, ack, failed_num = self.send_ack(message,5)
         else:
-        	data, ack, failed_num = self.send_ack(message.encode('utf-8'),5)
+            data, ack, failed_num = self.send_ack(message.encode('utf-8'),5)
         print('data=',data)
         print('ack=',ack)
         print('failed_num=', failed_num)
@@ -812,19 +812,19 @@ class netcat(object):
         '''
         #Obtain the TOF using the AT?T command, which will substitute the previouse method
         if ack == False:
-        	self.dprint('Range error occurred')
-        	return -1
+            self.dprint('Range error occurred')
+            return -1
         tof_us = -1
         for i in range(2):
-        	#try 2 times to get the range if not, return -1
-        	try:
-        		tof_us = int(self.send(b'AT?T'))
-        		break
-        	except:
-        		rospy.sleep(.1)
+            #try 2 times to get the range if not, return -1
+            try:
+                tof_us = int(self.send(b'AT?T'))
+                break
+            except:
+                rospy.sleep(.1)
         if tof_us == -1:
-        	print('ERROR: AT?T could not be sent')
-        	return -1
+            print('ERROR: AT?T could not be sent')
+            return -1
         slant_range = tof_us/1e6 * SOUND_SPEED
         self.dprint('SlantRange = %.2f m'%slant_range)
         return slant_range

@@ -1,0 +1,56 @@
+<launch>
+    <!-- Configurable arguments -->
+    <arg name="robot_name" default="sparus2"/>
+    <arg name="enable_keyboard" default="true"/>
+    <arg name="enable_joystick" default="false"/>
+    <arg name="joystick_device" default="/dev/input/js0"/>
+    <arg name="enable_gui" default="true"/>
+    <arg name="is_simulation" default="true"/>
+    <arg name="enable_rviz" default="false"/>
+    <arg name="simulation_data" default="$(find iauv_simulation)/data"/>
+    <arg name="scenario_description" default="$(find cola2_stonefish)/scenarios/sparus2_acoustics_shallow.scn"/>
+    <arg name="simulation_rate" default="100.0"/>
+    <arg name="graphics_resolution" default="1000 800"/>
+    <arg name="graphics_quality" default="high"/>
+    <arg name="docking_station_north" default="10.0"/>
+    <arg name="docking_station_east" default="0.0"/>
+    <arg name="docking_station_depth" default="5.0"/>
+    <arg name="docking_station_yaw" default="0.0"/>
+    <arg name="uniform_current_velocity_x" default="0.6"/>
+    <arg name="uniform_current_velocity_y" default="0.6"/>
+    <arg name="uniform_current_velocity_z" default="0.0"/>
+
+    <!-- Static transform -->
+    <node name="world2ned" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 3.1415 world world_ned 100"/>
+
+    <!-- Namespace with robot name -->
+    <group ns="$(arg robot_name)">
+        <include file="$(find iauv_simulation)/launch/core/sparus2_base.launch">
+            <arg name="robot_name" value="$(arg robot_name)"/>
+            <arg name="enable_keyboard" value="$(arg enable_keyboard)"/>
+            <arg name="enable_joystick" value="$(arg enable_joystick)"/>
+            <arg name="joystick_device" value="$(arg joystick_device)"/>
+            <arg name="enable_gui" value="$(arg enable_gui)"/>
+            <arg name="enable_rviz" value="$(arg enable_rviz)"/>
+            <arg name="robot_xacro" value="$(find sparus2_description)/urdf/payload.urdf.xacro"/>
+        </include>
+    </group>
+
+    <!-- Run Simulator -->
+    <node name="stonefish_simulator" pkg="stonefish_ros" type="parsed_simulator" args="$(arg simulation_data) $(arg scenario_description) $(arg simulation_rate) $(arg graphics_resolution) $(arg graphics_quality)">
+        <param name="uniform_current_velocity" value="$(arg uniform_current_velocity_x) $(arg uniform_current_velocity_y) $(arg uniform_current_velocity_z)"/>
+        <param name="ocean_current_x" value="$(arg uniform_current_velocity_x)"/>
+        <param name="ocean_current_y" value="$(arg uniform_current_velocity_y)"/>
+        <param name="ocean_current_z" value="$(arg uniform_current_velocity_z)"/>      
+        <param name="docking_station_pos" value="$(arg docking_station_north) $(arg docking_station_east) $(arg docking_station_depth)"/>
+        <param name="docking_station_ori" value="0.0 0.0 $(arg docking_station_yaw)"/>
+        <param name="docking_station_yaw" value="$(arg docking_station_yaw)"/>
+        <param name="docking_station_north" value="$(arg docking_station_north)"/>
+        <param name="docking_station_east" value="$(arg docking_station_east)"/>
+        <param name="docking_station_depth" value="$(arg docking_station_depth)"/>
+        <param name="robot_name" value="$(arg robot_name)"/>
+    </node>
+    
+    <!-- RViz -->
+    <node if="$(arg enable_rviz)" pkg="rviz" type="rviz" name="rviz" args="-d $(find iauv_simulation)/config/docking.rviz"/>
+</launch>
